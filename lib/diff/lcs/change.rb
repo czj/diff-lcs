@@ -123,15 +123,12 @@ class Diff::LCS::ContextChange
   # Simplifies a context change for use in some diff callbacks. '<' actions are converted
   # to '-' and '>' actions are converted to '+'.
   def self.simplify(event)
+    # Positional `new` allocates less than `with`, which matters once per changed element.
     case event.action
-    when "-"
-      event.with(new_element: nil)
-    when "<"
-      event.with(action: "-", new_element: nil)
-    when "+"
-      event.with(old_element: nil)
-    when ">"
-      event.with(action: "+", old_element: nil)
+    when "-", "<"
+      event.class.new("-", event.old_position, event.old_element, event.new_position, nil)
+    when "+", ">"
+      event.class.new("+", event.old_position, nil, event.new_position, event.new_element)
     else
       event
     end

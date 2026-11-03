@@ -46,6 +46,8 @@ module Diff::LCS::Internals # :nodoc:
   # end
   # ```
   def self.lcs(a, b)
+    a = indexable(a)
+    b = indexable(b)
     a_start = b_start = 0
     a_finish = a.size - 1
     b_finish = b.size - 1
@@ -154,6 +156,10 @@ module Diff::LCS::Internals # :nodoc:
 
     vector
   end
+
+  # Indexing a String allocates a new String on each access; its characters are read once
+  # instead.
+  def self.indexable(seq) = seq.is_a?(String) ? seq.chars : seq
 
   # This method will analyze the provided patchset to provide a single-pass normalization
   # (conversion of the array form of Diff::LCS::Change objects to the object form of same)
