@@ -9,19 +9,26 @@ class << Diff::LCS
   private :callbacks_for
 
   def diff_traversal(method, seq1, seq2, callbacks, &block)
-    callbacks = callbacks_for(callbacks)
+    if method == :sdiff && callbacks == Diff::LCS::SDiffCallbacks
+      diffs = Diff::LCS::Internals.sdiff_changes(seq1, seq2)
+    elsif method == :diff && callbacks == Diff::LCS::DiffCallbacks
+      diffs = Diff::LCS::Internals.diff_hunks(seq1, seq2)
+    else
+      callbacks = callbacks_for(callbacks)
 
-    case method
-    when :diff
-      traverse_sequences(seq1, seq2, callbacks)
-    when :sdiff
-      traverse_balanced(seq1, seq2, callbacks)
+      case method
+      when :diff
+        traverse_sequences(seq1, seq2, callbacks)
+      when :sdiff
+        traverse_balanced(seq1, seq2, callbacks)
+      end
+
+      callbacks.finish if callbacks.respond_to? :finish
+      diffs = callbacks.diffs
     end
 
-    callbacks.finish if callbacks.respond_to? :finish
-
     if block
-      callbacks.diffs.map do |hunk|
+      diffs.map do |hunk|
         if hunk.is_a? Array
           hunk.map { block.call(_1) }
         else
@@ -29,7 +36,7 @@ class << Diff::LCS
         end
       end
     else
-      callbacks.diffs
+      diffs
     end
   end
   private :diff_traversal
@@ -160,6 +167,108 @@ module Diff::LCS::Internals # :nodoc:
   # Indexing a String allocates a new String on each access; its characters are read once
   # instead.
   def self.indexable(seq) = seq.is_a?(String) ? seq.chars : seq
+
+  # Returns what `traverse_balanced` reports to `Diff::LCS::SDiffCallbacks`, built straight
+  # from the LCS: no event is allocated and then simplified for each element.
+  def self.sdiff_changes(seq1, seq2)
+    seq1 = indexable(seq1)
+    seq2 = indexable(seq2)
+    matches = lcs(seq1, seq2)
+    changes = []
+    a_i = b_j = m_a = 0
+
+    loop do
+      m_a += 1 while (m_a < matches.size) && matches[m_a].nil?
+
+      # Past the last match, the ends of both sequences act as one.
+      last = m_a >= matches.size
+      m_b = last ? seq2.size : matches[m_a]
+      m_a = seq1.size if last
+
+      while (a_i < m_a) || (b_j < m_b)
+        if (a_i < m_a) && (b_j < m_b)
+          changes << Diff::LCS::ContextChange.new("!", a_i, seq1[a_i], b_j, seq2[b_j])
+          a_i += 1
+          b_j += 1
+        elsif a_i < m_a
+          changes << Diff::LCS::ContextChange.new("-", a_i, seq1[a_i], b_j, nil)
+          a_i += 1
+        else
+          changes << Diff::LCS::ContextChange.new("+", a_i, nil, b_j, seq2[b_j])
+          b_j += 1
+        end
+      end
+
+      break if last
+
+      changes << Diff::LCS::ContextChange.new("=", a_i, seq1[a_i], b_j, seq2[b_j])
+      a_i += 1
+      b_j += 1
+      m_a += 1
+    end
+
+    changes
+  end
+
+  # Returns what `traverse_sequences` reports to `Diff::LCS::DiffCallbacks`, built straight
+  # from the LCS: matches, most of a diff, allocate nothing.
+  def self.diff_hunks(seq1, seq2)
+    seq1 = indexable(seq1)
+    seq2 = indexable(seq2)
+    matches = lcs(seq1, seq2)
+    a_size = seq1.size
+    b_size = seq2.size
+    hunks = []
+    hunk = []
+    a_i = b_j = 0
+
+    matches.each do |b_line|
+      if b_line.nil?
+        hunk << Diff::LCS::Change.new("-", a_i, seq1[a_i]) unless seq1[a_i].nil?
+      else
+        while b_j < b_line
+          hunk << Diff::LCS::Change.new("+", b_j, seq2[b_j])
+          b_j += 1
+        end
+
+        unless hunk.empty?
+          hunks << hunk
+          hunk = []
+        end
+        b_j += 1
+      end
+
+      a_i += 1
+    end
+
+    # Mirrors the order in which `traverse_sequences` discards the tails.
+    while (a_i < a_size) || (b_j < b_size)
+      if a_i == a_size
+        while b_j < b_size
+          hunk << Diff::LCS::Change.new("+", b_j, seq2[b_j])
+          b_j += 1
+        end
+      end
+
+      if (b_j == b_size) && (a_i < a_size)
+        hunk << Diff::LCS::Change.new("-", a_i, seq1[a_i])
+        a_i += 1
+      end
+
+      if a_i < a_size
+        hunk << Diff::LCS::Change.new("-", a_i, seq1[a_i])
+        a_i += 1
+      end
+
+      if b_j < b_size
+        hunk << Diff::LCS::Change.new("+", b_j, seq2[b_j])
+        b_j += 1
+      end
+    end
+
+    hunks << hunk unless hunk.empty?
+    hunks
+  end
 
   # This method will analyze the provided patchset to provide a single-pass normalization
   # (conversion of the array form of Diff::LCS::Change objects to the object form of same)
