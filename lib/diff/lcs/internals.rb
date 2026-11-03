@@ -70,31 +70,85 @@ module Diff::LCS::Internals # :nodoc:
     b_matches = position_hash(b, b_start..b_finish)
 
     thresh = []
+    # Links are stored flat, three entries each (index of the previous link or nil, i, j),
+    # so that recording a link allocates nothing. `link_at[k]` is the index of the link
+    # ending the best subsequence of length k + 1.
     links = []
+    link_at = []
 
-    (a_start..a_finish).each do |i|
-      ai = a[i]
-      bm = b_matches[ai]
-      k = nil
-      bm.reverse_each do |j|
-        # Although the threshold check is not mandatory for this to work, it may have an
-        # optimization purpose.
-        # An attempt to remove it: https://github.com/halostatue/diff-lcs/pull/72
-        # Why it is reintroduced: https://github.com/halostatue/diff-lcs/issues/78
-        if k && (thresh[k] > j) && (thresh[k - 1] < j)
-          thresh[k] = j
-        else
-          k = replace_next_larger(thresh, j, k)
+    i = a_start
+    while i <= a_finish
+      bm = b_matches[a[i]]
+
+      if bm
+        # Positions are visited in descending order, so each lands in a threshold slot no
+        # higher than the previous one: `limit` bounds the search.
+        limit = thresh.size - 1
+        m = bm.size - 1
+
+        while m >= 0
+          j = bm[m]
+
+          if thresh.empty? || (j > thresh[-1])
+            k = thresh.size
+          else
+            # Find the first threshold not below `j`, galloping down from `limit`: positions
+            # sharing an element tend to land in neighbouring slots. `j` replaces a larger
+            # threshold; an equal one means `j` extends no subsequence.
+            high = limit
+            step = 1
+            low = high - step
+            while (low >= 0) && (thresh[low] >= j)
+              high = low
+              step *= 2
+              low = high - step
+            end
+            low = low.negative? ? 0 : low + 1
+
+            while low < high
+              mid = (low + high) / 2
+              if thresh[mid] < j
+                low = mid + 1
+              else
+                high = mid
+              end
+            end
+
+            if thresh[low] == j
+              k = nil
+              limit = low
+            else
+              k = low
+            end
+          end
+
+          if k
+            # The next positions down to the smallest one above the previous threshold all
+            # land in this slot, each replacing the last: only that smallest one counts.
+            lower = k.positive? ? thresh[k - 1] : -1
+            if m.positive? && (bm[m - 1] > lower)
+              m = bm.bsearch_index { _1 > lower }
+              j = bm[m]
+            end
+
+            thresh[k] = j
+            link_at[k] = links.size
+            links << (k.positive? ? link_at[k - 1] : nil) << i << j
+            limit = k
+          end
+
+          m -= 1
         end
-        links[k] = [k.positive? ? links[k - 1] : nil, i, j] unless k.nil?
       end
+
+      i += 1
     end
 
     unless thresh.empty?
-      link = links[thresh.size - 1]
+      link = link_at[thresh.size - 1]
       until link.nil?
-        vector[link[1]] = link[2]
-        link = link[0]
+        vector[links[link + 1]] = links[link + 2]
+        link = links[link]
       end
     end
 
@@ -244,43 +298,6 @@ module Diff::LCS::Internals # :nodoc:
   end
 
   class << self
-    # Find the place at which `value` would normally be inserted into the Enumerable. If
-    # that place is already occupied by `value`, do nothing and return `nil`. If the place
-    # does not exist (i.e., it is off the end of the Enumerable), add it to the end.
-    # Otherwise, replace the element at that point with `value`. It is assumed that the
-    # Enumerable's values are numeric.
-    #
-    # This operation preserves the sort order.
-    def replace_next_larger(enum, value, last_index = nil)
-      # Off the end?
-      if enum.empty? || (value > enum[-1])
-        enum << value
-        return enum.size - 1
-      end
-
-      # Binary search for the insertion point
-      last_index ||= enum.size - 1
-      first_index = 0
-      while first_index <= last_index
-        i = (first_index + last_index) >> 1
-
-        found = enum[i]
-
-        return nil if value == found
-
-        if value > found
-          first_index = i + 1
-        else
-          last_index = i - 1
-        end
-      end
-
-      # The insertion point is in first_index; overwrite the next larger value.
-      enum[first_index] = value
-      first_index
-    end
-    private :replace_next_larger
-
     # If `vector` maps the matching elements of another collection onto this Enumerable,
     # compute the inverse of `vector` that maps this Enumerable onto the collection.
     # (Currently unused.)
@@ -297,7 +314,9 @@ module Diff::LCS::Internals # :nodoc:
     # occupies in the Enumerable, optionally restricted to the elements specified in the
     # range of indexes specified by `interval`.
     def position_hash(enum, interval)
-      Hash.new { |h, k| h[k] = [] }.tap { |hash| interval.each { hash[enum[_1]] << _1 } }
+      hash = {}
+      interval.each { |index| (hash[enum[index]] ||= []) << index }
+      hash
     end
     private :position_hash
   end
