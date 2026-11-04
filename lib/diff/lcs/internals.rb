@@ -238,7 +238,15 @@ module Diff::LCS::Internals # :nodoc:
           :patch
         end
       else
-        fail "The provided patchset does not appear to apply to the provided enumerable as either source or destination value."
+        # As many matches on each side: the side with fewer misses is the source.
+        case left_miss <=> right_miss
+        when -1
+          :patch
+        when 1
+          :unpatch
+        else
+          fail "The provided patchset does not appear to apply to the provided enumerable as either source or destination value."
+        end
       end
     end
   end
