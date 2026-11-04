@@ -359,4 +359,32 @@ class TestPatch < Minitest::Test
     assert_equal s1, unpatch!(s2, patch_set_s1_s2)
     assert_equal s2, unpatch!(s1, patch_set_s2_s1)
   end
+
+  # The "a" added at position 1 equals the "a" already at position 1 of "ca", so the
+  # patch set matches each side once and only the misses tell the direction.
+  def test_diff_patchset_autodiscovers_direction_on_equal_matches
+    patch_sequences_correctly("ca", "aab", diff("ca", "aab"))
+    patch_sequences_correctly(%w[c a], %w[a a b], diff(%w[c a], %w[a a b]))
+  end
+
+  def test_patchset_autodiscovers_a_valid_direction_on_random_sequences
+    random = Random.new(20261104)
+
+    2_000.times do
+      s1 = Array.new(random.rand(0..8)) { "abc"[random.rand(3)] }.join
+      s2 = Array.new(random.rand(0..8)) { "abc"[random.rand(3)] }.join
+
+      sdiff = sdiff(s1, s2)
+      changes = diff(s1, s2).flatten(1)
+
+      [[s1, s2], [s2, s1]].each do |source, expected|
+        assert_equal expected, patch(source, sdiff)
+        next if patch(source, [changes]) == expected
+
+        # A simple patch set has no context: here every removed and every added element
+        # matches source at its position, so source could be either side.
+        assert changes.all? { |change| source[change.position] == change.element }
+      end
+    end
+  end
 end
