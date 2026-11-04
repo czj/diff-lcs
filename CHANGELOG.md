@@ -1,5 +1,13 @@
 # Changelog
 
+## NEXT / unreleased
+
+- Clément Joubert ([@czj][gh-user-czj]) made `diff`, `sdiff`, `lcs` and `patch`
+  faster and far less allocation-heavy, with identical output: the LCS core no
+  longer allocates per link and skips redundant threshold updates, String
+  sequences are read once, and `diff` and `sdiff` build their default results
+  without traversal events. [#230][pull-230]
+
 ## 2.0.0 / 2026-02-01
 
 This release has significant **breaking changes**.
@@ -567,6 +575,7 @@ This release has significant **breaking changes**.
 [pull-129]: https://github.com/halostatue/diff-lcs/pull/129
 [pull-147]: https://github.com/halostatue/diff-lcs/pull/147
 [pull-148]: https://github.com/halostatue/diff-lcs/pull/148
+[pull-230]: https://github.com/halostatue/diff-lcs/pull/230
 [rspec-expectations#200]: https://github.com/rspec/rspec-expectations/pull/200
 [rspec-expectations#219]: https://github.com/rspec/rspec-expectations/issues/219
 [rspec-expectations#238]: https://github.com/rspec/rspec-expectations/issues/238
@@ -578,4 +587,5 @@ This release has significant **breaking changes**.
 [tp]: https://guides.rubygems.org/trusted-publishing/
 [kiro]: https://kiro.dev
 [gh-user-annih]: https://github.com/annih
+[gh-user-czj]: https://github.com/czj
 [gh-issue-891]: https://github.com/halostatue/diff-lcs/issues/891

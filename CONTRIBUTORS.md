@@ -14,6 +14,7 @@ Thanks to everyone else who has contributed to diff-lcs over the years:
 - Baptiste Courtois ([@annih][gh-user-annih])
 - Camille Drapier
 - Cédric Boutillier
+- Clément Joubert ([@czj][gh-user-czj])
 - [@earlopain][gh-user-earlopain]
 - Gregg Kellogg
 - Jagdeep Singh
@@ -57,3 +58,4 @@ Thanks to everyone else who has contributed to diff-lcs over the years:
 [gh-user-earlopain]: https://github.com/earlopain
 [gh-user-apuratepp]: https://github.com/apuratepp
 [gh-user-tiendo1011]: https://github.com/tiendo1011
+[gh-user-czj]: https://github.com/czj
