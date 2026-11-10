@@ -12,8 +12,8 @@
 ## Description
 
 Diff::LCS computes the difference between two Enumerable sequences using the
-McIlroy-Hunt longest common subsequence (LCS) algorithm. It includes utilities
-to create a simple HTML diff output format and a standard diff-like tool.
+McIlroy-Hunt longest common subsequence (LCS) algorithm. It includes a standard
+diff-like tool, `ldiff`.
 
 This is release 2.0, which has significant breaking changes (removal of
 deprecations and workarounds) and requires at least Ruby 3.2 or higher. See full
@@ -44,7 +44,7 @@ require 'diff/lcs'
 seq1 = %w(a b c e h j l m n p)
 seq2 = %w(b c d e f j k l m r s t)
 
-lcs = Diff::LCS.LCS(seq1, seq2)
+lcs = Diff::LCS.lcs(seq1, seq2)
 diffs = Diff::LCS.diff(seq1, seq2)
 sdiff = Diff::LCS.sdiff(seq1, seq2)
 seq = Diff::LCS.traverse_sequences(seq1, seq2, callback_obj)
@@ -79,6 +79,42 @@ data. While it is theoretically possible to generate a diff for an unordered
 hash, it will only be meaningful if the enumeration of the hashes is consistent.
 In general, this will mean that containers that behave like String or Array will
 perform best.
+
+### HTML Output
+
+Diff::LCS does not produce HTML output because the markup required differs from
+one application to the next. An HTML diff can be built in a few lines with
+`Diff::LCS.sdiff` and `Diff::LCS::GroupedSDiffCallbacks`, which groups adjacent
+changes with the same action so that each run of changes is wrapped once:
+
+```ruby
+require 'cgi/escape'
+require 'diff/lcs'
+
+def html_diff(old_text, new_text)
+  ins = ->(group) { "<ins>#{CGI.escapeHTML(group.map(&:new_element).join)}</ins>" }
+  del = ->(group) { "<del>#{CGI.escapeHTML(group.map(&:old_element).join)}</del>" }
+
+  # Split on word boundaries, keeping the whitespace.
+  seq1 = old_text.split(/\b/)
+  seq2 = new_text.split(/\b/)
+
+  Diff::LCS.sdiff(seq1, seq2, Diff::LCS::GroupedSDiffCallbacks).map { |group|
+    case group.first.action
+    when '=' then CGI.escapeHTML(group.map(&:old_element).join)
+    when '-' then del.call(group)
+    when '+' then ins.call(group)
+    when '!' then del.call(group) + ins.call(group)
+    end
+  }.join
+end
+
+html_diff('The fox jumps over the dog', 'The quick brown fox leaps over the dog')
+# => "The <ins>quick brown </ins>fox <del>jumps</del><ins>leaps</ins> over the dog"
+```
+
+Compare lines (`String#lines`) or characters (`String#chars`) instead of words
+by changing how the two sequences are built.
 
 ## History
 
