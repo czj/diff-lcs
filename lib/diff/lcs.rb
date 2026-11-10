@@ -172,8 +172,8 @@ module Diff::LCS
   # ```
   #
   # See Diff::LCS::SDiffCallbacks for the default behaviour. An alternate behaviour may be
-  # implemented with Diff::LCS::ContextDiffCallbacks. If the `callbacks` object responds
-  # to #finish, it will be called.
+  # implemented with Diff::LCS::ContextDiffCallbacks or Diff::LCS::GroupedSDiffCallbacks.
+  # If the `callbacks` object responds to #finish, it will be called.
   #
   # Each element of a returned array is a Diff::LCS::ContextChange object, which can be
   # implicitly converted to an array.

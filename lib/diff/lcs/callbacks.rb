@@ -323,3 +323,133 @@ class Diff::LCS::SDiffCallbacks
     @diffs << Diff::LCS::ContextChange.simplify(event)
   end
 end
+
+# This will produce a compound array of contextual diff change objects. Each element in
+# the #diffs array is a "group" array, where each element in each "group" array is
+# a single ContextChange and every change in a "group" has the same action. Adjacent
+# changes with the same action are always in the same "group". As with
+# Diff::LCS::SDiffCallbacks, both old and new objects will be presented for both changed
+# <strong>and unchanged</strong> objects. `nil` will be substituted for a discarded
+# object.
+#
+# ```ruby
+# seq1 = %w(a b c e h j l m n p)
+# seq2 = %w(b c d e f j k l m r s t)
+#
+# diffs = Diff::LCS.sdiff(seq1, seq2, Diff::LCS::GroupedSDiffCallbacks)
+# # This example shows a simplified array format.
+# # [ [ [ "-", [  0, "a" ], [  0, nil ] ] ],  # 1
+# #   [ [ "=", [  1, "b" ], [  0, "b" ] ],    # 2
+# #     [ "=", [  2, "c" ], [  1, "c" ] ] ],
+# #   [ [ "+", [  3, nil ], [  2, "d" ] ] ],  # 3
+# #   [ [ "=", [  3, "e" ], [  3, "e" ] ] ],  # 4
+# #   [ [ "!", [  4, "h" ], [  4, "f" ] ] ],  # 5
+# #   [ [ "=", [  5, "j" ], [  5, "j" ] ] ],  # 6
+# #   [ [ "+", [  6, nil ], [  6, "k" ] ] ],  # 7
+# #   [ [ "=", [  6, "l" ], [  7, "l" ] ],    # 8
+# #     [ "=", [  7, "m" ], [  8, "m" ] ] ],
+# #   [ [ "!", [  8, "n" ], [  9, "r" ] ],    # 9
+# #     [ "!", [  9, "p" ], [ 10, "s" ] ] ],
+# #   [ [ "+", [ 10, nil ], [ 11, "t" ] ] ] ] # 10
+# ```
+#
+# The ten groups shown contain the same changes in the same order as the result from
+# Diff::LCS::SDiffCallbacks. They may be compared as:
+#
+# ```ruby
+# s = Diff::LCS.sdiff(seq1, seq2)
+# g = Diff::LCS.sdiff(seq1, seq2, Diff::LCS::GroupedSDiffCallbacks).flatten(1)
+#
+# s == g # => true
+# ```
+#
+# This is useful when a run of changes should be presented as a single change, such as
+# when a number of adjacent added words should be shown as one insertion:
+#
+# ```ruby
+# seq1 = %w(The fox jumps)
+# seq2 = %w(The quick brown fox jumps)
+#
+# Diff::LCS.sdiff(seq1, seq2, Diff::LCS::GroupedSDiffCallbacks).map { |group|
+#   case group.first.action
+#   when "=" then group.map(&:old_element).join(" ")
+#   when "-" then "<del>#{group.map(&:old_element).join(" ")}</del>"
+#   when "+" then "<ins>#{group.map(&:new_element).join(" ")}</ins>"
+#   when "!"
+#     "<del>#{group.map(&:old_element).join(" ")}</del>" \
+#       "<ins>#{group.map(&:new_element).join(" ")}</ins>"
+#   end
+# }.join(" ")
+# # => "The <ins>quick brown</ins> fox jumps"
+# ```
+#
+# ### Use
+#
+# This callback object must be initialised and is used by the Diff::LCS#sdiff method.
+#
+# ```ruby
+# cbo = Diff::LCS::GroupedSDiffCallbacks.new
+# Diff::LCS.traverse_balanced(seq1, seq2, cbo)
+# cbo.finish
+# ```
+#
+# Note that the call to #finish is absolutely necessary, or the last group of changes
+# will not be visible. This callback also supports a block mode which automatically calls
+# #finish.
+#
+# ```ruby
+# result = Diff::LCS::GroupedSDiffCallbacks.new { |cbo|
+#   Diff::LCS.traverse_balanced(seq1, seq2, cbo)
+# }
+# ```
+#
+# ### Simplified Array Format
+#
+# The simplified array format used in the example above can be obtained with:
+#
+# ```ruby
+# require 'pp'
+# pp diffs.map { |e| e.map { |f| f.to_a } }
+# ```
+class Diff::LCS::GroupedSDiffCallbacks
+  # Returns the difference set collected during the diff process.
+  attr_reader :diffs
+
+  def initialize # :yields: self
+    @group = []
+    @diffs = []
+
+    return unless block_given?
+
+    begin
+      yield self
+    ensure
+      finish
+    end
+  end
+
+  # Finalizes the diff process. If an unprocessed group still exists, then it is appended
+  # to the diff list.
+  def finish = finish_group
+
+  def match(event) = add_to_group(event)
+
+  def discard_a(event) = add_to_group(event)
+
+  def discard_b(event) = add_to_group(event)
+
+  def change(event) = add_to_group(event)
+
+  def add_to_group(event)
+    change = Diff::LCS::ContextChange.simplify(event)
+    finish_group unless @group.empty? || @group.last.action == change.action
+    @group << change
+  end
+  private :add_to_group
+
+  def finish_group
+    @diffs << @group unless @group.empty?
+    @group = []
+  end
+  private :finish_group
+end
