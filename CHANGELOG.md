@@ -1,5 +1,15 @@
 # Changelog
 
+## NEXT / YYYY-MM-DD
+
+- Extracted the hunk merging and diff output logic from `Diff::LCS::Ldiff` so
+  that it can be used without `bin/ldiff`. `Diff::LCS::Hunk.from_diff` returns
+  the merged hunks for two sequences of lines and `Diff::LCS::Hunk.diff` returns
+  the diff string in the old, unified, or context format. [#46][issue-46]
+
+- Fixed `ldiff -c` output when there is more than one hunk. The separator for a
+  hunk was written on the same line as the last line of the previous hunk.
+
 ## 2.0.0 / 2026-02-01
 
 This release has significant **breaking changes**.
