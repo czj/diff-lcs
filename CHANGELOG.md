@@ -2,6 +2,10 @@
 
 ## NEXT / 2026-11-DD
 
+- Clément Joubert ([@czj][gh-user-czj]) fixed `ldiff -c` output with more than
+  one hunk: when a hunk ended with lines from the new file, the separator of
+  the next hunk was written on the same line as the last line.
+
 - Added a guard test suite showing that Unicode NFC and NFD forms compare
   differently. [#234][pull-234]
 
