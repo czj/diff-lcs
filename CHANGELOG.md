@@ -1,5 +1,12 @@
 # Changelog
 
+## NEXT / YYYY-MM-DD
+
+- Added `Diff::LCS::GroupedSDiffCallbacks` for use with `Diff::LCS.sdiff`. It
+  collects adjacent changes with the same action into groups so that a run of
+  additions, deletions, or changes can be presented as a single change.
+  [#16][issue-16]
+
 ## 2.0.0 / 2026-02-01
 
 This release has significant **breaking changes**.
@@ -508,6 +515,7 @@ This release has significant **breaking changes**.
 [issue-05]: https://github.com/halostatue/diff-lcs/issues/5
 [issue-06]: https://github.com/halostatue/diff-lcs/issues/6
 [issue-12]: https://github.com/halostatue/diff-lcs/issues/12
+[issue-16]: https://github.com/halostatue/diff-lcs/issues/16
 [issue-21]: https://github.com/halostatue/diff-lcs/issues/21
 [issue-33]: https://github.com/halostatue/diff-lcs/issues/33
 [issue-35]: https://github.com/halostatue/diff-lcs/issues/35
