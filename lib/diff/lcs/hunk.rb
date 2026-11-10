@@ -5,9 +5,64 @@ require "diff/lcs/block"
 # A Hunk is a group of Blocks which overlap because of the context surrounding each block.
 # (So if we're not using context, every hunk will contain one block.) Used in the diff
 # program (bin/ldiff).
+#
+# Hunks can also be used without bin/ldiff to produce the same output for two sequences of
+# lines.
+#
+# ```ruby
+# data_old = "a\nb\nc\n".lines
+# data_new = "a\nx\nc\n".lines
+#
+# puts Diff::LCS::Hunk.diff(data_old, data_new, :unified, 3)
+# # @@ -1,3 +1,3 @@
+# #  a
+# # -b
+# # +x
+# #  c
+# ```
 class Diff::LCS::Hunk
   OLD_DIFF_OP_ACTION = {"+" => "a", "-" => "d", "!" => "c"}.freeze # :nodoc:
   private_constant :OLD_DIFF_OP_ACTION
+
+  # Returns the hunks for the differences between the lines of `data_old` and `data_new`,
+  # each with `context` lines of context. Hunks which overlap because of their context are
+  # merged. Returns an empty array if there are no differences.
+  def self.from_diff(data_old, data_new, context = 0)
+    # After we've read up to a certain point in each file, the number of items we've read
+    # from each file will differ by FLD (could be 0).
+    file_length_difference = 0
+
+    Diff::LCS.diff(data_old, data_new).each_with_object([]) do |piece, hunks|
+      hunk = new(data_old, data_new, piece, context, file_length_difference)
+      file_length_difference = hunk.file_length_difference
+
+      # If a hunk overlaps with the last hunk, join them.
+      if context.positive? && hunk.merge(hunks.last)
+        hunks[-1] = hunk
+      else
+        hunks << hunk
+      end
+    end
+  end
+
+  # Returns a diff string for the differences between the lines of `data_old` and
+  # `data_new` in the provided `format` (`:old`, `:unified`, or `:context`) with `context`
+  # lines of context. Returns an empty string if there are no differences.
+  #
+  # The diff string does not include the file header lines (`---` and `+++` for a unified
+  # diff) that are written by bin/ldiff.
+  def self.diff(data_old, data_new, format = :old, context = 0)
+    hunks = from_diff(data_old, data_new, context)
+    last = hunks.last
+
+    hunks.each_with_object(+"") do |hunk, output|
+      piece = hunk.diff(format, hunk.equal?(last))
+      newline = "\n".encode(piece.encoding)
+      piece << newline unless piece.empty? || piece.end_with?(newline)
+
+      output << piece
+    end
+  end
 
   # Create a hunk using references to both the old and new data, as well as the piece of
   # data.
