@@ -2,6 +2,12 @@
 
 ## NEXT / 2026-11-DD
 
+- Clément Joubert ([@czj][gh-user-czj]) moved the hunk merging and output of
+  `Diff::LCS::Ldiff` to `Diff::LCS::Hunk`, so that it can be used without
+  `bin/ldiff`: `Diff::LCS::Hunk.from_diff` returns the merged hunks for two
+  sequences of lines and `Diff::LCS::Hunk.diff` returns the diff in the old,
+  unified, or context format. `ldiff` output is unchanged. [#46][issue-46]
+
 - Clément Joubert ([@czj][gh-user-czj]) fixed `ldiff -c` output with more than
   one hunk: when a hunk ended with lines from the new file, the separator of
   the next hunk was written on the same line as the last line.
