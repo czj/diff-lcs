@@ -2,6 +2,11 @@
 
 ## NEXT / 2026-11-DD
 
+- Clément Joubert ([@czj][gh-user-czj]) documented how to group adjacent
+  `sdiff` changes with `Enumerable#chunk_while` and build an HTML diff from
+  them, resolving [#16][issue-16] and [#41][issue-41]. The README no longer
+  mentions the HTML output removed in 2.0.0 nor the removed `Diff::LCS.LCS`.
+
 - Added a guard test suite showing that Unicode NFC and NFD forms compare
   differently. [#234][pull-234]
 
@@ -528,10 +533,12 @@ This release has significant **breaking changes**.
 [issue-05]: https://github.com/halostatue/diff-lcs/issues/5
 [issue-06]: https://github.com/halostatue/diff-lcs/issues/6
 [issue-12]: https://github.com/halostatue/diff-lcs/issues/12
+[issue-16]: https://github.com/halostatue/diff-lcs/issues/16
 [issue-21]: https://github.com/halostatue/diff-lcs/issues/21
 [issue-33]: https://github.com/halostatue/diff-lcs/issues/33
 [issue-35]: https://github.com/halostatue/diff-lcs/issues/35
 [issue-38]: https://github.com/halostatue/diff-lcs/issues/38
+[issue-41]: https://github.com/halostatue/diff-lcs/issues/41
 [issue-43]: https://github.com/halostatue/diff-lcs/issues/43
 [issue-44]: https://github.com/halostatue/diff-lcs/issues/44
 [issue-46]: https://github.com/halostatue/diff-lcs/issues/46
