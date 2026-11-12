@@ -18,6 +18,7 @@ class Diff::LCS::Change
   MEMBERS = %i[action position element].freeze
   private_constant :MEMBERS
 
+  # Returns the member names of a Change, in the order of its positional arguments.
   def self.members = MEMBERS
 
   # Returns the action this Change represents.
@@ -29,8 +30,14 @@ class Diff::LCS::Change
   # Returns the sequence element of the Change.
   attr_reader :element
 
+  # :call-seq:
+  #   new(action, position, element) -> change
+  #   new(action:, position:, element:) -> change
+  #
+  # Returns a new frozen Change. `action` must be one of VALID_ACTIONS and `position`
+  # must be an Integer.
   def initialize(action = NO_ARGUMENT, position = NO_ARGUMENT, element = NO_ARGUMENT)
-    action, position, element = arguments_to_members(action, position, element) if NO_ARGUMENT.equal?(element)
+    action, position, element = arguments_to_values(action, position, element) if NO_ARGUMENT.equal?(element)
 
     fail "Invalid Change Action '#{action}'" unless Diff::LCS::Change.valid_action?(action)
     fail "Invalid Position Type" unless position.is_a?(Integer)
@@ -49,7 +56,9 @@ class Diff::LCS::Change
 
   def deconstruct_keys(_) = {action:, position:, element:}
 
-  protected def values = [@action, @position, @element]
+  protected def values # :nodoc:
+    [@action, @position, @element]
+  end
 
   def self.from_a(arr)
     case arr
@@ -99,6 +108,7 @@ class Diff::LCS::ContextChange
   MEMBERS = %i[action old_position old_element new_position new_element].freeze
   private_constant :MEMBERS
 
+  # Returns the member names of a ContextChange, in the order of its positional arguments.
   def self.members = MEMBERS
 
   # Returns the action this Change represents.
@@ -116,10 +126,16 @@ class Diff::LCS::ContextChange
   # Returns the new element being changed.
   attr_reader :new_element
 
+  # :call-seq:
+  #   new(action, old_position, old_element, new_position, new_element) -> context_change
+  #   new(action:, old_position:, old_element:, new_position:, new_element:) -> context_change
+  #
+  # Returns a new frozen ContextChange. `action` must be one of Change::VALID_ACTIONS,
+  # and each position must be an Integer or `nil`.
   def initialize(action = NO_ARGUMENT, old_position = NO_ARGUMENT, old_element = NO_ARGUMENT, new_position = NO_ARGUMENT, new_element = NO_ARGUMENT)
     if NO_ARGUMENT.equal?(new_element)
       action, old_position, old_element, new_position, new_element =
-        arguments_to_members(action, old_position, old_element, new_position, new_element)
+        arguments_to_values(action, old_position, old_element, new_position, new_element)
     end
 
     fail "Invalid Change Action '#{action}'" unless Diff::LCS::Change.valid_action?(action)
@@ -140,7 +156,9 @@ class Diff::LCS::ContextChange
 
   def deconstruct_keys(_) = {action:, old_position:, old_element:, new_position:, new_element:}
 
-  protected def values = [@action, @old_position, @old_element, @new_position, @new_element]
+  protected def values # :nodoc:
+    [@action, @old_position, @old_element, @new_position, @new_element]
+  end
 
   def self.from_a(arr) = Diff::LCS::Change.from_a(arr)
 
@@ -148,14 +166,10 @@ class Diff::LCS::ContextChange
   # to '-' and '>' actions are converted to '+'.
   def self.simplify(event)
     case event.action
-    when "-"
-      event.with(new_element: nil)
-    when "<"
-      event.with(action: "-", new_element: nil)
-    when "+"
-      event.with(old_element: nil)
-    when ">"
-      event.with(action: "+", old_element: nil)
+    when "-", "<"
+      event.class.new("-", event.old_position, event.old_element, event.new_position, nil)
+    when "+", ">"
+      event.class.new("+", event.old_position, nil, event.new_position, event.new_element)
     else
       event
     end
