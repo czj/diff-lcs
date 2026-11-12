@@ -44,7 +44,7 @@ module Diff::LCS::FrozenValue # :nodoc:
 
   # Like `marshal_load`, goes through `initialize`, so loaded values are validated and
   # frozen.
-  def init_with(coder) = initialize(**coder.map.transform_keys { _1.to_s.to_sym })
+  def init_with(coder) = initialize(**coder.map.transform_keys { _1.is_a?(String) ? _1.to_sym : _1 })
 
   private
 

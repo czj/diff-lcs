@@ -15,7 +15,7 @@ class TestFrozenValue < Minitest::Test
 
   def context_change = CONTEXT_CHANGE.new("!", 1, "old", 2, "new")
 
-  # The members (+to_h+) of the value built by +operation+ on +klass+, or the message of
+  # The members (`to_h`) of the value built by `operation` on `klass`, or the message of
   # the ArgumentError it raised.
   def outcome(klass, &operation)
     operation.call(klass).to_h
@@ -137,7 +137,7 @@ class TestFrozenValue < Minitest::Test
     assert_raises_with_message ArgumentError, "unknown keyword: :extra" do
       YAML.unsafe_load("#{dump}extra: 1\n")
     end
-    assert_raises_with_message ArgumentError, "unknown keyword: :\"1\"" do
+    assert_raises_with_message ArgumentError, "unknown keyword: 1" do
       YAML.unsafe_load("#{dump}1: 2\n")
     end
   end
