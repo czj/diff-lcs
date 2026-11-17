@@ -2,6 +2,10 @@
 
 ## NEXT / 2026-11-DD
 
+- Clément Joubert ([@czj][gh-user-czj]) fixed `ldiff -c` output with more than
+  one hunk: when a hunk ended with lines from the new file, the separator of
+  the next hunk was written on the same line as the last line. [#241][pull-241]
+
 - Added a guard test suite showing that Unicode NFC and NFD forms compare
   differently. [#234][pull-234]
 
@@ -14,6 +18,16 @@
   split into code points once instead of allocating on every access.
   `diff` and `sdiff` build their default results without traversal events.
   [#230][pull-230]
+
+- Clément Joubert ([@czj][gh-user-czj]) made `Diff::LCS::Change` and
+  `Diff::LCS::ContextChange` plain frozen classes with the API they had as
+  `Data` classes, so building one allocates a single object: on line diffs
+  with YJIT, `sdiff` runs more than twice as fast and `traverse_balanced`
+  1.7 times as fast. They are no longer `Data` instances, `to_s`, `pp` and
+  `ContextChange#inspect` drop the `data` prefix, keyword names must be
+  Symbols, a subclass overriding `initialize` with keyword parameters can no
+  longer be built positionally, and a `Marshal` or YAML dump made with 2.0.x
+  no longer loads. [#235][pull-235]
 
 ## 2.0.0 / 2026-02-01
 
@@ -591,6 +605,8 @@ This release has significant **breaking changes**.
 [pull-230]: https://github.com/halostatue/diff-lcs/pull/230
 [pull-231]: https://github.com/halostatue/diff-lcs/pull/231
 [pull-234]: https://github.com/halostatue/diff-lcs/pull/234
+[pull-235]: https://github.com/halostatue/diff-lcs/pull/235
+[pull-241]: https://github.com/halostatue/diff-lcs/pull/241
 [rspec-expectations#200]: https://github.com/rspec/rspec-expectations/pull/200
 [rspec-expectations#219]: https://github.com/rspec/rspec-expectations/issues/219
 [rspec-expectations#238]: https://github.com/rspec/rspec-expectations/issues/238

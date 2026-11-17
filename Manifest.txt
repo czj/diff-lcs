@@ -20,6 +20,7 @@ lib/diff/lcs/array.rb
 lib/diff/lcs/block.rb
 lib/diff/lcs/callbacks.rb
 lib/diff/lcs/change.rb
+lib/diff/lcs/frozen_value.rb
 lib/diff/lcs/hunk.rb
 lib/diff/lcs/internals.rb
 lib/diff/lcs/ldiff.rb
@@ -91,6 +92,9 @@ test/fixtures/ldiff/output.diff.four_lines.vs.empty-c
 test/fixtures/ldiff/output.diff.four_lines.vs.empty-e
 test/fixtures/ldiff/output.diff.four_lines.vs.empty-f
 test/fixtures/ldiff/output.diff.four_lines.vs.empty-u
+test/fixtures/ldiff/output.diff.hunks
+test/fixtures/ldiff/output.diff.hunks-c
+test/fixtures/ldiff/output.diff.hunks-u
 test/fixtures/ldiff/output.diff.issue95_trailing_context
 test/fixtures/ldiff/output.diff.issue95_trailing_context-c
 test/fixtures/ldiff/output.diff.issue95_trailing_context-e
@@ -108,11 +112,14 @@ test/fixtures/ldiff/output.diff.missing_new_line2-f
 test/fixtures/ldiff/output.diff.missing_new_line2-u
 test/fixtures/new-chef
 test/fixtures/new-chef2
+test/fixtures/new-hunks
 test/fixtures/old-chef
 test/fixtures/old-chef2
+test/fixtures/old-hunks
 test/test_block.rb
 test/test_change.rb
 test/test_diff.rb
+test/test_frozen_value.rb
 test/test_helper.rb
 test/test_hunk.rb
 test/test_issues.rb
