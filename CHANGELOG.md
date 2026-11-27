@@ -2,6 +2,15 @@
 
 ## NEXT / 2026-11-DD
 
+- Clément Joubert ([@czj][gh-user-czj]) fixed `ldiff -c` output with more than
+  one hunk: when a hunk ended with lines from the new file, the separator of
+  the next hunk was written on the same line as the last line. [#241][pull-241]
+
+- Clément Joubert ([@czj][gh-user-czj]) fixed `Diff::LCS::Ldiff.run` reading
+  the file names from `ARGV` instead of its `args`, and `-` from `$stdin`
+  instead of its `input`, so it can be called with any array and input.
+  [#236][issue-236]
+
 - Added a guard test suite showing that Unicode NFC and NFD forms compare
   differently. [#234][pull-234]
 
@@ -14,6 +23,19 @@
   split into code points once instead of allocating on every access.
   `diff` and `sdiff` build their default results without traversal events.
   [#230][pull-230]
+
+- Clément Joubert ([@czj][gh-user-czj]) made `Diff::LCS::Change` and
+  `Diff::LCS::ContextChange` plain frozen classes with the API they had as
+  `Data` classes, so building one allocates a single object: on line diffs
+  with YJIT, `sdiff` runs more than twice as fast and `traverse_balanced`
+  1.7 times as fast. They are no longer `Data` instances, `to_s`, `pp` and
+  `ContextChange#inspect` drop the `data` prefix, keyword names must be
+  Symbols, a subclass overriding `initialize` with keyword parameters can no
+  longer be built positionally, and a `Marshal` or YAML dump made with 2.0.x
+  no longer loads. [#235][pull-235]
+
+- Clément Joubert ([@czj][gh-user-czj]) fixed `ldiff -q` reporting two
+  identical binary files as different. [#237][issue-237]
 
 ## 2.0.0 / 2026-02-01
 
@@ -548,6 +570,8 @@ This release has significant **breaking changes**.
 [issue-102]: https://github.com/halostatue/diff-lcs/issues/102
 [issue-106]: https://github.com/halostatue/diff-lcs/issues/106
 [issue-107]: https://github.com/halostatue/diff-lcs/issues/107
+[issue-236]: https://github.com/halostatue/diff-lcs/issues/236
+[issue-237]: https://github.com/halostatue/diff-lcs/issues/237
 [pull-08]: https://github.com/halostatue/diff-lcs/pull/8
 [pull-09]: https://github.com/halostatue/diff-lcs/pull/9
 [pull-10]: https://github.com/halostatue/diff-lcs/pull/10
@@ -591,6 +615,8 @@ This release has significant **breaking changes**.
 [pull-230]: https://github.com/halostatue/diff-lcs/pull/230
 [pull-231]: https://github.com/halostatue/diff-lcs/pull/231
 [pull-234]: https://github.com/halostatue/diff-lcs/pull/234
+[pull-235]: https://github.com/halostatue/diff-lcs/pull/235
+[pull-241]: https://github.com/halostatue/diff-lcs/pull/241
 [rspec-expectations#200]: https://github.com/rspec/rspec-expectations/pull/200
 [rspec-expectations#219]: https://github.com/rspec/rspec-expectations/issues/219
 [rspec-expectations#238]: https://github.com/rspec/rspec-expectations/issues/238
